@@ -1,0 +1,151 @@
+// Prisma schema — apartment management system (Mang Mee Tawee Suk)
+// Dev: SQLite. For production switch provider to "postgresql" and set DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---- users / auth ----
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("staff") // owner | staff
+  createdAt    DateTime @default(now())
+}
+
+// ---- billing identities (normal invoice vs reimbursable receipt with tax id) ----
+model BillingProfile {
+  id           Int     @id @default(autoincrement())
+  key          String  @unique // "normal" | "tax"
+  name         String
+  addressLine1 String
+  addressLine2 String
+  taxId        String?
+  phone        String?
+  footerNote1  String?
+  footerNote2  String?
+}
+
+// ---- bank accounts (vary by floor / special rooms) ----
+model BankAccount {
+  id          Int     @id @default(autoincrement())
+  label       String  // e.g. "ชั้น 2-3"
+  bankName    String
+  accountNo   String
+  accountName String
+  promptpayId String? // phone / national id for PromptPay QR (phase 2)
+  rooms       Room[]
+}
+
+// ---- rooms ----
+model Room {
+  id            Int            @id @default(autoincrement())
+  number        Int            @unique
+  floor         Int
+  rent          Float          @default(0)
+  furnitureFee  Float          @default(0)
+  commonFee     Float          @default(0)
+  garbageFee    Float          @default(0)
+  elecRate      Float          @default(8)
+  waterRate     Float          @default(20)
+  waterMin      Float          @default(100)
+  status        String         @default("vacant") // occupied | vacant
+  note          String?
+  bankAccountId Int?
+  bankAccount   BankAccount?   @relation(fields: [bankAccountId], references: [id])
+  leases        Lease[]
+  readings      MeterReading[]
+  invoices      Invoice[]
+}
+
+// ---- tenants ----
+model Tenant {
+  id        Int     @id @default(autoincrement())
+  name      String
+  address   String?
+  phone     String?
+  workplace String?
+  leases    Lease[]
+}
+
+// ---- leases (a tenant renting a room for a period) ----
+model Lease {
+  id          Int       @id @default(autoincrement())
+  roomId      Int
+  room        Room      @relation(fields: [roomId], references: [id])
+  tenantId    Int
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  contractNo  String?
+  moveInDate  DateTime?
+  moveOutDate DateTime?
+  rent        Float     @default(0)
+  deposit     Float     @default(0)
+  active      Boolean   @default(true)
+  note        String?
+  invoices    Invoice[]
+}
+
+// ---- monthly meter readings ----
+model MeterReading {
+  id       Int    @id @default(autoincrement())
+  roomId   Int
+  room     Room   @relation(fields: [roomId], references: [id])
+  year     Int
+  month    Int
+  elecOld  Float?
+  elecNew  Float?
+  waterOld Float?
+  waterNew Float?
+  other    Float  @default(0)
+
+  @@unique([roomId, year, month])
+}
+
+// ---- invoices ----
+model Invoice {
+  id           Int           @id @default(autoincrement())
+  number       String        @unique
+  roomId       Int
+  room         Room          @relation(fields: [roomId], references: [id])
+  leaseId      Int?
+  lease        Lease?        @relation(fields: [leaseId], references: [id])
+  issueDate    DateTime      @default(now())
+  rentMonth    String
+  utilityMonth String
+  total        Float
+  status       String        @default("unpaid") // unpaid | paid | partial
+  lines        InvoiceLine[]
+  payments     Payment[]
+  createdAt    DateTime      @default(now())
+}
+
+model InvoiceLine {
+  id          Int     @id @default(autoincrement())
+  invoiceId   Int
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  qty         Float
+  unit        String
+  unitPrice   Float
+  amount      Float
+}
+
+// ---- payments (slip upload + manual confirm) ----
+model Payment {
+  id        Int      @id @default(autoincrement())
+  invoiceId Int
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  amount    Float
+  paidDate  DateTime @default(now())
+  method    String   @default("transfer")
+  slipUrl   String?
+  status    String   @default("pending") // pending | confirmed
+  note      String?
+}
