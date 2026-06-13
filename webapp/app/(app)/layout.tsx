@@ -11,7 +11,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="no-print bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <span className="font-bold text-slate-800">มั่งมีทวีสุข</span>

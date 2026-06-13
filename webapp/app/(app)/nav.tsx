@@ -7,6 +7,8 @@ const links = [
   { href: "/", label: "ภาพรวม" },
   { href: "/rooms", label: "ห้องพัก" },
   { href: "/tenants", label: "ผู้เช่า" },
+  { href: "/billing", label: "ออกบิล" },
+  { href: "/invoices", label: "ใบแจ้งหนี้" },
 ];
 
 export default function Nav() {

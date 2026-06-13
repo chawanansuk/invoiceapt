@@ -60,16 +60,17 @@ async function main() {
     ],
   });
 
-  // bank accounts
+  // bank accounts — promptpayId defaults to the owner's phone; edit per account in settings
   const acctName = "นายชวนันท์ สุขพรชัยรัก";
+  const ppDefault = "0994419465";
   const kkp = await prisma.bankAccount.create({
-    data: { label: "ชั้น 2-3", bankName: "ธนาคารเกียรตินาคินภัทร", accountNo: "20-0208389-2", accountName: acctName },
+    data: { label: "ชั้น 2-3", bankName: "ธนาคารเกียรตินาคินภัทร", accountNo: "20-0208389-2", accountName: acctName, promptpayId: ppDefault },
   });
   const ksr = await prisma.bankAccount.create({
-    data: { label: "ชั้น 4-5", bankName: "ธนาคารกรุงศรีอยุธยา สาขาท่าดินแดง", accountNo: "112-1-33961-7", accountName: acctName },
+    data: { label: "ชั้น 4-5", bankName: "ธนาคารกรุงศรีอยุธยา สาขาท่าดินแดง", accountNo: "112-1-33961-7", accountName: acctName, promptpayId: ppDefault },
   });
   const ktb = await prisma.bankAccount.create({
-    data: { label: "ชั้น 6 / ห้องพิเศษ", bankName: "ธนาคารกรุงไทย สาขาราชวงศ์", accountNo: "043-0-24123-2", accountName: acctName },
+    data: { label: "ชั้น 6 / ห้องพิเศษ", bankName: "ธนาคารกรุงไทย สาขาราชวงศ์", accountNo: "043-0-24123-2", accountName: acctName, promptpayId: ppDefault },
   });
 
   function bankFor(bankText) {
