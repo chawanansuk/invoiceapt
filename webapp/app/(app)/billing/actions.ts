@@ -5,6 +5,26 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { computeBill, invoiceNumber } from "@/lib/billing";
 import { monthLabel } from "@/lib/format";
+import { extractMeter, isConfigured } from "@/lib/anthropic";
+
+export type MeterOcr = { ok: true; value: number } | { ok: false; error: string };
+
+/** Read a meter photo with vision AI and return the digits. */
+export async function ocrMeterAction(
+  dataUrl: string,
+  kind: "elec" | "water"
+): Promise<MeterOcr> {
+  await requireUser();
+  if (!isConfigured()) {
+    return { ok: false, error: "ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY — กรอกเลขมิเตอร์เองได้" };
+  }
+  try {
+    const r = await extractMeter(dataUrl, kind);
+    return { ok: true, value: r.value };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "อ่านมิเตอร์ไม่สำเร็จ" };
+  }
+}
 
 function numOrNull(v: FormDataEntryValue | null): number | null {
   const s = String(v ?? "").trim().replace(/,/g, "");

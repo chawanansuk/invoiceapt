@@ -4,6 +4,28 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { extractSlip, isConfigured } from "@/lib/anthropic";
+
+export type SlipOcr =
+  | { ok: true; amount: number; dateISO: string; note: string }
+  | { ok: false; error: string };
+
+/** Read a payment slip image with vision AI and return prefill values. */
+export async function ocrSlipAction(dataUrl: string): Promise<SlipOcr> {
+  await requireUser();
+  if (!isConfigured()) {
+    return { ok: false, error: "ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY — กรอกข้อมูลเองได้" };
+  }
+  try {
+    const r = await extractSlip(dataUrl);
+    const note = [r.sender && `ผู้โอน: ${r.sender}`, r.ref && `อ้างอิง: ${r.ref}`]
+      .filter(Boolean)
+      .join(" · ");
+    return { ok: true, amount: r.amount, dateISO: r.dateISO, note };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "อ่านสลิปไม่สำเร็จ" };
+  }
+}
 
 /** Recompute invoice status from its confirmed payments. */
 async function refreshStatus(invoiceId: number) {

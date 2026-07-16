@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { computeBill } from "@/lib/billing";
 import { baht } from "@/lib/format";
-import { saveReadings } from "./actions";
+import { saveReadings, ocrMeterAction } from "./actions";
+import CameraButton from "../camera-button";
 
 export type RoomRow = {
   roomId: number;
@@ -146,13 +147,24 @@ export default function MeterTable({
                     />
                   </td>
                   <td className="px-1 py-1.5">
-                    <input
-                      name={`elecNew_${r.roomId}`}
-                      value={s.elecNew}
-                      onChange={(e) => update(r.roomId, "elecNew", e.target.value)}
-                      inputMode="decimal"
-                      className={cell}
-                    />
+                    <div className="flex items-center gap-1">
+                      <input
+                        name={`elecNew_${r.roomId}`}
+                        value={s.elecNew}
+                        onChange={(e) => update(r.roomId, "elecNew", e.target.value)}
+                        inputMode="decimal"
+                        className={cell}
+                      />
+                      <CameraButton
+                        title={`ถ่ายรูปมิเตอร์ไฟ ห้อง ${r.roomNumber}`}
+                        className="h-7 w-7 shrink-0"
+                        onCapture={async (d) => {
+                          const res = await ocrMeterAction(d, "elec");
+                          if (res.ok && res.value > 0)
+                            update(r.roomId, "elecNew", String(res.value));
+                        }}
+                      />
+                    </div>
                   </td>
                   <td className="px-1 py-1.5">
                     <input
@@ -164,13 +176,24 @@ export default function MeterTable({
                     />
                   </td>
                   <td className="px-1 py-1.5">
-                    <input
-                      name={`waterNew_${r.roomId}`}
-                      value={s.waterNew}
-                      onChange={(e) => update(r.roomId, "waterNew", e.target.value)}
-                      inputMode="decimal"
-                      className={cell}
-                    />
+                    <div className="flex items-center gap-1">
+                      <input
+                        name={`waterNew_${r.roomId}`}
+                        value={s.waterNew}
+                        onChange={(e) => update(r.roomId, "waterNew", e.target.value)}
+                        inputMode="decimal"
+                        className={cell}
+                      />
+                      <CameraButton
+                        title={`ถ่ายรูปมิเตอร์น้ำ ห้อง ${r.roomNumber}`}
+                        className="h-7 w-7 shrink-0"
+                        onCapture={async (d) => {
+                          const res = await ocrMeterAction(d, "water");
+                          if (res.ok && res.value > 0)
+                            update(r.roomId, "waterNew", String(res.value));
+                        }}
+                      />
+                    </div>
                   </td>
                   <td className="px-1 py-1.5">
                     <input
